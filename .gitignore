@@ -1,0 +1,9 @@
+shopworld/
+backend/accounts/__pycache__/
+backend/accounts/migrations/__pycache__/
+backend/conf/__pycache__/
+backend/products/__pycache__/
+backend/products/migrations/__pycache__/
+.env
+db.sqlite3
+__pycache__/
