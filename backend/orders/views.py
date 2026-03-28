@@ -11,7 +11,10 @@ class OrderListCreateView(generics.ListCreateAPIView):
 	permission_classes = [IsAuthenticated]
 
 	def get_queryset(self):
-		return Order.objects.filter(user=self.request.user).prefetch_related("items__product")
+		queryset = Order.objects.prefetch_related("items__product")
+		if self.request.user.is_staff:
+			return queryset
+		return queryset.filter(user=self.request.user)
 
 	def get_serializer_class(self):
 		if self.request.method == "POST":
@@ -32,7 +35,10 @@ class OrderRetrieveView(generics.RetrieveAPIView):
 	lookup_field = "order_id"
 
 	def get_queryset(self):
-		return Order.objects.filter(user=self.request.user).prefetch_related("items__product")
+		queryset = Order.objects.prefetch_related("items__product")
+		if self.request.user.is_staff:
+			return queryset
+		return queryset.filter(user=self.request.user)
 
 	def get_object(self):
 		queryset = self.get_queryset()

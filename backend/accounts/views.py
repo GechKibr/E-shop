@@ -1,10 +1,14 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+from orders.models import Order
+from products.models import Product
 
 from .serializers import (
     AdminUserSerializer,
@@ -74,3 +78,20 @@ class UserRoleUpdateView(generics.UpdateAPIView):
 
     def patch(self, request, *args, **kwargs):
         return self.partial_update(request, *args, **kwargs)
+
+
+class AdminDashboardView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        total_revenue = Order.objects.aggregate(total=Sum("total_price"))["total"] or 0
+
+        return Response(
+            {
+                "total_users": User.objects.count(),
+                "total_products": Product.objects.count(),
+                "total_orders": Order.objects.count(),
+                "total_revenue": float(total_revenue),
+            },
+            status=status.HTTP_200_OK,
+        )
