@@ -15,4 +15,4 @@ class CartAdmin(admin.ModelAdmin):
 class CartItemAdmin(admin.ModelAdmin):
 	list_display = ["id", "cart", "product", "quantity", "subtotal", "updated_at"]
 	list_filter = ["updated_at"]
-	search_fields = ["cart__user__username", "product__name", "product__product_id"]
+	search_fields = ["cart__user__username", "product__name", "=product__id"]

@@ -1,67 +1,134 @@
-from django.db import models
-from django.contrib.auth import get_user_model
-from django.utils import timezone
-
-
-User = get_user_model()
+from django.db import models, transaction
+from django.utils.text import slugify
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 class Category(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    description = models.TextField(blank=True)
-
-    def __str__(self):
-        return self.name
-
-class Product(models.Model):
-    product_id = models.CharField(primary_key=True, max_length=20, editable=False)
-    name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    product_image = models.URLField(blank=True)
-    product_image_file = models.FileField(upload_to="products/", blank=True, null=True)
-    description = models.TextField(blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    stock = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    @classmethod
-    def _generate_product_id(cls):
-        date_str = timezone.localdate().strftime("%Y%m%d")
-        prefix = f"NIGAT{date_str}"
-
-        latest_product = cls.objects.filter(product_id__startswith=prefix).order_by("-product_id").first()
-
-        if latest_product:
-            next_sequence = int(latest_product.product_id[-6:]) + 1
-        else:
-            next_sequence = 1
-
-        return f"{prefix}{next_sequence:06d}"
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True, blank=True)
+    parent = models.ForeignKey(
+        'self', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='children'
+    )
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ['name']
 
     def save(self, *args, **kwargs):
-        if not self.product_id:
-            self.product_id = self._generate_product_id()
+        if not self.slug:
+            self.slug = slugify(self.name)
         super().save(*args, **kwargs)
 
+    def get_children(self):
+        return self.children.all()
+
+    def get_full_path(self):
+        full_path = [self.name]
+        k = self.parent
+        while k is not None:
+            full_path.append(k.name)
+            k = k.parent
+        return " > ".join(full_path[::-1])
+
     def __str__(self):
-        return self.name
+        return self.get_full_path()
 
 
-class ProductReview(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="reviews")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="product_reviews")
-    rating = models.PositiveSmallIntegerField()
-    comment = models.TextField(blank=True)
+class Product(models.Model):
+    category = models.ForeignKey(
+        Category, 
+        on_delete=models.CASCADE, 
+        related_name='products'
+    )
+    name = models.CharField(max_length=255)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    description = models.TextField(blank=True)
+    price = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        validators=[MinValueValidator(0.01)]
+    )
+    stock_quantity = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(fields=["product", "user"], name="unique_user_review_per_product"),
-            models.CheckConstraint(condition=models.Q(rating__gte=1, rating__lte=5), name="rating_between_1_and_5"),
-        ]
+        ordering = ['-created_at']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    def is_in_stock(self):
+        return self.stock_quantity > 0
+
+    @transaction.atomic
+    def reduce_stock(self, quantity):
+        if quantity <= self.stock_quantity:
+            self.stock_quantity -= quantity
+            self.save()
+            return True
+        return False
+
+    def increase_stock(self, quantity):
+        self.stock_quantity += quantity
+        self.save()
+
+    def get_primary_image(self):
+        primary = self.images.filter(is_primary=True).first()
+        return primary.image_url if primary else None
 
     def __str__(self):
-        return f"{self.user} review for {self.product} ({self.rating})"
+        return self.name
 
+
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product, 
+        on_delete=models.CASCADE, 
+        related_name='images'
+    )
+    image_url = models.URLField()
+    is_primary = models.BooleanField(default=False)
+
+    def set_as_primary(self):
+        with transaction.atomic():
+            ProductImage.objects.filter(product=self.product).update(is_primary=False)
+            self.is_primary = True
+            self.save()
+
+    def save(self, *args, **kwargs):
+        if not ProductImage.objects.filter(product=self.product).exists():
+            self.is_primary = True
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Image for {self.product.name}"
+
+
+
+class ProductReview(models.Model):
+    product = models.ForeignKey(
+        Product, 
+        on_delete=models.CASCADE, 
+        related_name='reviews'
+    )
+    user = models.ForeignKey(
+        'accounts.User', 
+        on_delete=models.CASCADE, 
+        related_name='product_reviews'
+    )
+    rating = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('product', 'user')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Review by {self.user.username} for {self.product.name}"
