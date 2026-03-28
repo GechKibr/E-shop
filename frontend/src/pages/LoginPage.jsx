@@ -7,10 +7,10 @@ function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, getApiErrorMessage } = useAuth();
-  const [form, setForm] = useState({ username: "", password: "" });
+  const [form, setForm] = useState({ identifier: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  const from = location.state?.from?.pathname || "/";
+  const from = location.state?.from || "/";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -30,16 +30,18 @@ function LoginPage() {
     <div className="mx-auto max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <h1 className="text-2xl font-bold">Sign in</h1>
       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-        Access your cart, orders, and checkout.
+        Use your username or email to access your account.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium">Username</label>
+          <label className="mb-1 block text-sm font-medium">Username or Email</label>
           <input
             className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
-            value={form.username}
-            onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
+            placeholder="jane or jane@example.com"
+            value={form.identifier}
+            onChange={(event) => setForm((prev) => ({ ...prev, identifier: event.target.value }))}
+            autoComplete="username"
             required
           />
         </div>
@@ -51,6 +53,7 @@ function LoginPage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
             value={form.password}
             onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+            autoComplete="current-password"
             required
           />
         </div>

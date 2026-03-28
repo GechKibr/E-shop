@@ -18,6 +18,17 @@ function RegisterPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (form.password !== form.confirm_password) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+
     setLoading(true);
     try {
       await register(form);

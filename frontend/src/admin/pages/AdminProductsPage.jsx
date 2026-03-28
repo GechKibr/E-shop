@@ -60,6 +60,16 @@ function AdminProductsPage() {
     }
   };
 
+  const handleToggleActive = async (product) => {
+    try {
+      await productApi.patchProduct(product.product_id, { is_active: !product.is_active });
+      toast.success(product.is_active ? "Product deactivated" : "Product activated");
+      fetchData();
+    } catch (toggleError) {
+      toast.error(getApiErrorMessage(toggleError, "Failed to update product status"));
+    }
+  };
+
   const handleSubmit = async (payload) => {
     setSaving(true);
     try {
@@ -97,10 +107,35 @@ function AdminProductsPage() {
     { key: "price", label: "Price" },
     { key: "stock", label: "Stock" },
     {
+      key: "is_active",
+      label: "Status",
+      render: (row) => (
+        <span
+          className={`inline-flex rounded-full px-2 py-1 text-xs font-semibold ${
+            row.is_active
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
+              : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+          }`}
+        >
+          {row.is_active ? "Active" : "Inactive"}
+        </span>
+      ),
+    },
+    {
       key: "actions",
       label: "Actions",
       render: (row) => (
         <div className="flex gap-2">
+          <button
+            onClick={() => handleToggleActive(row)}
+            className={`rounded-lg border px-3 py-1.5 text-xs ${
+              row.is_active
+                ? "border-amber-300 text-amber-700 dark:border-amber-800"
+                : "border-emerald-300 text-emerald-700 dark:border-emerald-800"
+            }`}
+          >
+            {row.is_active ? "Deactivate" : "Activate"}
+          </button>
           <button
             onClick={() => openEdit(row)}
             className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs dark:border-slate-600"

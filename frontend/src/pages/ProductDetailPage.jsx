@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import productApi from "../api/productApi";
+import wishlistApi from "../api/wishlistApi";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../api/error";
@@ -10,6 +11,8 @@ import ErrorState from "../components/ErrorState";
 
 function ProductDetailPage() {
   const { productId } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const { addToCart } = useCart();
   const { isAuthenticated, user } = useAuth();
 
@@ -17,6 +20,9 @@ function ProductDetailPage() {
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [addingToCart, setAddingToCart] = useState(false);
+  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: "" });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [zoomOrigin, setZoomOrigin] = useState("center center");
@@ -53,12 +59,25 @@ function ProductDetailPage() {
       ]);
       setProduct(productData);
       setReviews(Array.isArray(reviewData) ? reviewData : []);
+      
+      // Load wishlist status if authenticated
+      if (isAuthenticated) {
+        try {
+          const wishlistData = await wishlistApi.getWishlist();
+          const isInWishlist = wishlistData?.items?.some(item => item.product === (productData?.product_id || productData?.id));
+          setIsWishlisted(isInWishlist || false);
+        } catch {
+          console.log("Could not load wishlist");
+        }
+      } else {
+        setIsWishlisted(false);
+      }
     } catch (fetchError) {
       setError(getApiErrorMessage(fetchError, "Failed to load product"));
     } finally {
       setLoading(false);
     }
-  }, [productId]);
+  }, [productId, isAuthenticated]);
 
   useEffect(() => {
     loadData();
@@ -66,15 +85,23 @@ function ProductDetailPage() {
 
   const handleAdd = async () => {
     if (!isAuthenticated) {
-      toast.error("Sign in to add this item");
+      navigate("/login", { state: { from: location.pathname } });
       return;
     }
 
+    if (!product?.is_active) {
+      toast.error("This product is currently unavailable.");
+      return;
+    }
+
+    setAddingToCart(true);
     try {
       await addToCart(product.product_id, 1);
       toast.success("Added to cart");
     } catch (addError) {
       toast.error(getApiErrorMessage(addError, "Could not add to cart"));
+    } finally {
+      setAddingToCart(false);
     }
   };
 
@@ -106,6 +133,40 @@ function ProductDetailPage() {
       toast.error(getApiErrorMessage(submitError, "Failed to submit review"));
     } finally {
       setSubmittingReview(false);
+    }
+  };
+
+  const handleWishlistToggle = async () => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+
+    if (!product?.is_active) {
+      toast.error("This product is currently unavailable.");
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      if (isWishlisted) {
+        // Find the wishlist item to remove
+        const wishlistData = await wishlistApi.getWishlist();
+        const itemToRemove = wishlistData?.items?.find(item => item.product === (product?.product_id || product?.id));
+        if (itemToRemove) {
+          await wishlistApi.removeItem(itemToRemove.id);
+          setIsWishlisted(false);
+          toast.success("Removed from wishlist");
+        }
+      } else {
+        await wishlistApi.addItem(product?.product_id || product?.id);
+        setIsWishlisted(true);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to update wishlist"));
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
@@ -200,9 +261,19 @@ function ProductDetailPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               onClick={handleAdd}
-              className="rounded-lg bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-500"
+              disabled={addingToCart || Number(product.stock) <= 0 || !product.is_active}
+              className="rounded-lg bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Add to Cart
+              {addingToCart ? "Adding..." : "Add to Cart"}
+            </button>
+            <button
+              onClick={handleWishlistToggle}
+              disabled={wishlistLoading || !product.is_active}
+              className="rounded-lg border border-slate-300 px-5 py-2.5 font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-600 dark:hover:bg-slate-800"
+            >
+              <span className={`${isWishlisted ? "text-red-500" : ""}`}>
+                {isWishlisted ? "❤️ Wishlisted" : "🤍 Add to Wishlist"}
+              </span>
             </button>
             <Link
               to="/"

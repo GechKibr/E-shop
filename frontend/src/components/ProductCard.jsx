@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-function ProductCard({ product, onAddToCart, adding }) {
+function ProductCard({ product, onAddToCart, adding, onWishlistToggle, isWishlisted, wishlistLoading }) {
   const imageSrc = product.product_image_file_url || product.product_image || "";
   const price = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -39,9 +39,20 @@ function ProductCard({ product, onAddToCart, adding }) {
       <div className="mt-auto pt-4">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-xl font-bold text-slate-900 dark:text-white">{price}</span>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {product.stock} in stock
-          </span>
+          <button
+            onClick={() => onWishlistToggle(product.product_id)}
+            disabled={wishlistLoading || !product.is_active}
+            className="transition"
+            title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          >
+            <span className={`text-2xl ${isWishlisted ? "text-red-500" : "text-slate-300 hover:text-red-500 dark:text-slate-600"}`}>
+              {isWishlisted ? "❤️" : "🤍"}
+            </span>
+          </button>
+        </div>
+
+        <div className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+          {product.stock} in stock
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -53,7 +64,7 @@ function ProductCard({ product, onAddToCart, adding }) {
           </Link>
           <button
             onClick={() => onAddToCart(product.product_id)}
-            disabled={adding || Number(product.stock) <= 0}
+            disabled={adding || Number(product.stock) <= 0 || !product.is_active}
             className="rounded-lg bg-brand-600 px-3 py-2 text-sm font-medium text-white hover:bg-brand-500 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Add

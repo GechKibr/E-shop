@@ -9,7 +9,7 @@ import AdminModal from "../components/AdminModal";
 
 const initialForm = {
   name: "",
-  description: "",
+  parent_id: "",
 };
 
 function AdminCategoriesPage() {
@@ -49,7 +49,7 @@ function AdminCategoriesPage() {
     setEditingCategory(category);
     setForm({
       name: category.name || "",
-      description: category.description || "",
+      parent_id: category.parent?.id ? String(category.parent.id) : "",
     });
     setModalOpen(true);
   };
@@ -69,10 +69,16 @@ function AdminCategoriesPage() {
     setSaving(true);
     try {
       if (editingCategory) {
-        await productApi.updateCategory(editingCategory.id, form);
+        await productApi.updateCategory(editingCategory.id, {
+          name: form.name,
+          parent_id: form.parent_id ? Number(form.parent_id) : null,
+        });
         toast.success("Category updated");
       } else {
-        await productApi.createCategory(form);
+        await productApi.createCategory({
+          name: form.name,
+          parent_id: form.parent_id ? Number(form.parent_id) : null,
+        });
         toast.success("Category created");
       }
       setModalOpen(false);
@@ -96,10 +102,11 @@ function AdminCategoriesPage() {
   const columns = [
     { key: "id", label: "ID" },
     { key: "name", label: "Name" },
+    { key: "slug", label: "Slug" },
     {
-      key: "description",
-      label: "Description",
-      render: (row) => row.description || "-",
+      key: "parent",
+      label: "Parent",
+      render: (row) => row.parent?.name || "Root",
     },
     {
       key: "actions",
@@ -150,15 +157,20 @@ function AdminCategoriesPage() {
             className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
             required
           />
-          <textarea
-            value={form.description}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
-            }
-            placeholder="Description"
-            rows={4}
+          <select
+            value={form.parent_id}
+            onChange={(event) => setForm((prev) => ({ ...prev, parent_id: event.target.value }))}
             className="w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
-          />
+          >
+            <option value="">No parent (root category)</option>
+            {categories
+              .filter((item) => item.id !== editingCategory?.id)
+              .map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+          </select>
           <button
             disabled={saving}
             className="w-full rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-500 disabled:opacity-60"

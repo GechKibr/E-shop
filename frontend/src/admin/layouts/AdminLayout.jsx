@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import AdminSidebar from "../components/AdminSidebar";
 import AdminTopbar from "../components/AdminTopbar";
+import AdminFooter from "../components/AdminFooter";
 
 function AdminLayout() {
   return (
@@ -12,6 +13,7 @@ function AdminLayout() {
           <main className="flex-1 p-4 sm:p-6">
             <Outlet />
           </main>
+          <AdminFooter />
         </div>
       </div>
     </div>

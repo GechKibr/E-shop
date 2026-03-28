@@ -8,6 +8,7 @@ const initialState = {
   price: "",
   stock: "",
   category_id: "",
+  is_active: true,
 };
 
 const mapProductToForm = (product) => {
@@ -23,6 +24,7 @@ const mapProductToForm = (product) => {
     price: product.price || "",
     stock: product.stock || "",
     category_id: product.category?.id || "",
+    is_active: product.is_active ?? true,
   };
 };
 
@@ -44,7 +46,7 @@ function ProductForm({ product, categories, onSubmit, loading }) {
       payload.append("price", String(Number(form.price)));
       payload.append("stock", String(Number(form.stock)));
       payload.append("description", form.description || "");
-      payload.append("product_image", "");
+      payload.append("is_active", String(Boolean(form.is_active)));
       payload.append("product_image_file", form.product_image_file);
       onSubmit(payload);
       return;
@@ -56,6 +58,7 @@ function ProductForm({ product, categories, onSubmit, loading }) {
       price: Number(form.price),
       stock: Number(form.stock),
       category_id: Number(form.category_id),
+      is_active: Boolean(form.is_active),
     });
   };
 
@@ -148,6 +151,14 @@ function ProductForm({ product, categories, onSubmit, loading }) {
         className="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
         rows={4}
       />
+      <label className="md:col-span-2 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-800">
+        <input
+          type="checkbox"
+          checked={Boolean(form.is_active)}
+          onChange={(event) => handleChange("is_active", event.target.checked)}
+        />
+        Active product
+      </label>
       <button
         disabled={loading}
         className="md:col-span-2 rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-500 disabled:opacity-60"

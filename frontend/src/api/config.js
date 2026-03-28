@@ -16,6 +16,9 @@ export const ENDPOINTS = {
         list: withBase("users/"),
         detail: (id) => withBase(`users/${id}/`),
         updateRole: (id) => withBase(`users/${id}/role/`),
+        addresses: withBase("users/me/addresses/"),
+        addressDetail: (id) => withBase(`users/me/addresses/${id}/`),
+        setDefaultAddress: (id) => withBase(`users/me/addresses/${id}/set-default/`),
     },
     categories: {
         list: withBase("categories/"),
@@ -24,6 +27,12 @@ export const ENDPOINTS = {
     products: {
         list: withBase("products/"),
         detail: (productId) => withBase(`products/${productId}/`),
+        reviews: (productId) => withBase(`products/${productId}/reviews/`),
+        reviewDetail: (productId, reviewId) => withBase(`products/${productId}/reviews/${reviewId}/`),
+        images: (productId) => withBase(`products/${productId}/images/`),
+        imageDetail: (productId, imageId) => withBase(`products/${productId}/images/${imageId}/`),
+        setPrimaryImage: (productId, imageId) =>
+            withBase(`products/${productId}/images/${imageId}/set-primary/`),
     },
     cart: {
         detail: withBase("cart/"),

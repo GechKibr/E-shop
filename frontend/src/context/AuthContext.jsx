@@ -6,6 +6,23 @@ import { getApiErrorMessage } from "../api/error";
 
 const AuthContext = createContext(null);
 
+const normalizeUser = (rawUser) => {
+  if (!rawUser) {
+    return null;
+  }
+
+  const role = rawUser.role || (rawUser.is_staff ? "Admin" : "Customer");
+  return {
+    ...rawUser,
+    role,
+    addresses: Array.isArray(rawUser.addresses) ? rawUser.addresses : [],
+    profile: rawUser.profile || {},
+    phone_number: rawUser.phone_number || rawUser.profile?.phone_number || "",
+    bio: rawUser.bio || rawUser.profile?.bio || "",
+    avatar: rawUser.avatar || rawUser.profile?.avatar || "",
+  };
+};
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +39,7 @@ export function AuthProvider({ children }) {
 
       try {
         const me = await authApi.me();
-        setUser(me);
+        setUser(normalizeUser(me));
       } catch {
         tokenStorage.clear();
         setUser(null);
@@ -38,20 +55,30 @@ export function AuthProvider({ children }) {
     const data = await authApi.login(payload);
     tokenStorage.setTokens({ access: data.access, refresh: data.refresh });
     if (data.user) {
-      setUser(data.user);
-      return data.user;
+      const normalized = normalizeUser(data.user);
+      setUser(normalized);
+      return normalized;
     }
     const me = await authApi.me();
-    setUser(me);
-    return me;
+    const normalized = normalizeUser(me);
+    setUser(normalized);
+    return normalized;
   };
 
   const register = async (payload) => authApi.register(payload);
 
+  const refreshUser = async () => {
+    const me = await authApi.me();
+    const normalized = normalizeUser(me);
+    setUser(normalized);
+    return normalized;
+  };
+
   const updateProfile = async (payload) => {
     const updated = await authApi.updateMe(payload);
-    setUser(updated);
-    return updated;
+    const normalized = normalizeUser(updated);
+    setUser(normalized);
+    return normalized;
   };
 
   const logout = async () => {
@@ -76,6 +103,7 @@ export function AuthProvider({ children }) {
       isAdmin,
       login,
       register,
+      refreshUser,
       updateProfile,
       logout,
       setUser,

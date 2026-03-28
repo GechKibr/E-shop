@@ -10,6 +10,8 @@ function AdminProfilePage() {
     email: "",
     first_name: "",
     last_name: "",
+    phone_number: "",
+    bio: "",
   });
 
   useEffect(() => {
@@ -22,6 +24,8 @@ function AdminProfilePage() {
       email: user.email || "",
       first_name: user.first_name || "",
       last_name: user.last_name || "",
+      phone_number: user.phone_number || user.profile?.phone_number || "",
+      bio: user.bio || user.profile?.bio || "",
     });
   }, [user]);
 
@@ -72,6 +76,19 @@ function AdminProfilePage() {
           value={form.last_name}
           onChange={(event) => setForm((prev) => ({ ...prev, last_name: event.target.value }))}
           className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+        />
+        <input
+          placeholder="Phone number"
+          value={form.phone_number}
+          onChange={(event) => setForm((prev) => ({ ...prev, phone_number: event.target.value }))}
+          className="rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+        />
+        <textarea
+          placeholder="Bio"
+          value={form.bio}
+          onChange={(event) => setForm((prev) => ({ ...prev, bio: event.target.value }))}
+          className="md:col-span-2 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800"
+          rows={3}
         />
 
         <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800">

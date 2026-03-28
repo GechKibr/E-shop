@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import productApi from "../api/productApi";
+import wishlistApi from "../api/wishlistApi";
 import { getApiErrorMessage } from "../api/error";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
@@ -13,6 +15,8 @@ import Pagination from "../components/Pagination";
 const PAGE_SIZE = 8;
 
 function ProductsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
   const { addToCart } = useCart();
 
@@ -24,41 +28,80 @@ function ProductsPage() {
   const [category, setCategory] = useState("all");
   const [page, setPage] = useState(1);
   const [addingId, setAddingId] = useState(null);
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
       const [productData, categoryData] = await Promise.all([
-        productApi.getProducts(),
+        productApi.getProducts({ is_active: true }),
         productApi.getCategories(),
       ]);
       setProducts(Array.isArray(productData) ? productData : []);
       setCategories(Array.isArray(categoryData) ? categoryData : []);
+      
+      // Load wishlist if authenticated
+      if (isAuthenticated) {
+        try {
+          const wishlistData = await wishlistApi.getWishlist();
+          const itemIds = Array.isArray(wishlistData?.items) 
+            ? wishlistData.items.map(item => item.product)
+            : [];
+          setWishlistItems(itemIds);
+        } catch {
+          console.log("Could not load wishlist");
+        }
+      } else {
+        setWishlistItems([]);
+      }
     } catch (fetchError) {
       setError(getApiErrorMessage(fetchError, "Failed to load products"));
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
-
+    
+    // Get the selected category
+    const selectedCat = categories.find(c => String(c.id) === String(category));
+    
     return products.filter((product) => {
-      const inCategory =
-        category === "all" || String(product.category?.id) === String(category);
+      let inCategory = false;
+      
+      if (category === "all") {
+        inCategory = true;
+      } else if (selectedCat) {
+        // Check if product is in selected category or any of its subcategories
+        const productCatId = String(product.category?.id);
+        const selectedCatId = String(selectedCat.id);
+        
+        // Direct match
+        if (productCatId === selectedCatId) {
+          inCategory = true;
+        } else {
+          // Check if product category is a subcategory of selected category
+          const productCategory = categories.find(c => String(c.id) === productCatId);
+          if (productCategory && productCategory.parent_id === selectedCat.id) {
+            inCategory = true;
+          }
+        }
+      }
+      
       const inSearch =
         !query ||
         product.name.toLowerCase().includes(query) ||
         (product.description || "").toLowerCase().includes(query);
       return inCategory && inSearch;
     });
-  }, [products, search, category]);
+  }, [products, search, category, categories]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
 
@@ -73,7 +116,13 @@ function ProductsPage() {
 
   const handleAddToCart = async (productId) => {
     if (!isAuthenticated) {
-      toast.error("Please sign in to add items to cart");
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+
+    const selectedProduct = products.find((item) => String(item.product_id) === String(productId));
+    if (!selectedProduct?.is_active) {
+      toast.error("This product is currently unavailable.");
       return;
     }
 
@@ -85,6 +134,43 @@ function ProductsPage() {
       toast.error(getApiErrorMessage(addError, "Failed to add item"));
     } finally {
       setAddingId(null);
+    }
+  };
+
+  const handleWishlistToggle = async (productId) => {
+    if (!isAuthenticated) {
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+
+    const selectedProduct = products.find((item) => String(item.product_id) === String(productId));
+    if (!selectedProduct?.is_active) {
+      toast.error("This product is currently unavailable.");
+      return;
+    }
+
+    setWishlistLoading(true);
+    try {
+      const isCurrentlyWishlisted = wishlistItems.includes(productId);
+      
+      if (isCurrentlyWishlisted) {
+        // Find the wishlist item to remove
+        const wishlistData = await wishlistApi.getWishlist();
+        const itemToRemove = wishlistData?.items?.find(item => item.product === productId);
+        if (itemToRemove) {
+          await wishlistApi.removeItem(itemToRemove.id);
+          setWishlistItems(prev => prev.filter(id => id !== productId));
+          toast.success("Removed from wishlist");
+        }
+      } else {
+        await wishlistApi.addItem(productId);
+        setWishlistItems(prev => [...prev, productId]);
+        toast.success("Added to wishlist");
+      }
+    } catch (error) {
+      toast.error(getApiErrorMessage(error, "Failed to update wishlist"));
+    } finally {
+      setWishlistLoading(false);
     }
   };
 
@@ -137,6 +223,9 @@ function ProductsPage() {
                 product={product}
                 adding={addingId === product.product_id}
                 onAddToCart={handleAddToCart}
+                isWishlisted={wishlistItems.includes(product.product_id)}
+                onWishlistToggle={handleWishlistToggle}
+                wishlistLoading={wishlistLoading}
               />
             ))}
           </div>

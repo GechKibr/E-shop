@@ -22,6 +22,37 @@ function Navbar() {
     navigate("/");
   };
 
+  const customerLinks = (
+    <>
+      <NavLink to="/orders" className={navItemClass}>
+        Orders
+      </NavLink>
+      <NavLink to="/wishlist" className={navItemClass}>
+        Wishlist
+      </NavLink>
+      <NavLink to="/cart" className={navItemClass}>
+        🛒 Cart ({cartCount})
+      </NavLink>
+      <NavLink to="/profile" className={navItemClass}>
+        Profile
+      </NavLink>
+    </>
+  );
+
+  const adminLinks = (
+    <>
+      <NavLink to="/admin" className={navItemClass}>
+        Admin Panel
+      </NavLink>
+      <NavLink to="/admin/orders" className={navItemClass}>
+        Manage Orders
+      </NavLink>
+      <NavLink to="/admin/profile" className={navItemClass}>
+        Admin Profile
+      </NavLink>
+    </>
+  );
+
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur dark:border-slate-700 dark:bg-slate-950/90">
       <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
@@ -33,24 +64,7 @@ function Navbar() {
           <NavLink to="/" className={navItemClass} end>
             Products
           </NavLink>
-          {isAuthenticated ? (
-            <>
-              <NavLink to="/orders" className={navItemClass}>
-                Orders
-              </NavLink>
-              <NavLink to="/cart" className={navItemClass}>
-                🛒 Cart ({cartCount})
-              </NavLink>
-              <NavLink to="/profile" className={navItemClass}>
-                Profile
-              </NavLink>
-              {isAdmin ? (
-                <NavLink to="/admin" className={navItemClass}>
-                  Admin
-                </NavLink>
-              ) : null}
-            </>
-          ) : null}
+          {isAuthenticated ? (isAdmin ? adminLinks : customerLinks) : null}
         </div>
 
         <div className="flex items-center gap-2">
