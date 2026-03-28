@@ -1,10 +1,8 @@
 from decimal import Decimal
-
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models, transaction
 from django.db.models import F, Sum
-
 
 class Cart(models.Model):
     cart_id = models.CharField(primary_key=True, max_length=24, editable=False)
@@ -82,11 +80,9 @@ class Cart(models.Model):
         return cart_item
 
     def remove_product(self, product):
-        """Removes a specific product entirely from the cart."""
         self.items.filter(product=product).delete()
 
     def clear_cart(self):
-        """Deletes all items associated with this cart."""
         self.items.all().delete()
 
     def __str__(self):
