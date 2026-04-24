@@ -11,7 +11,7 @@ schema_view = get_schema_view(
     openapi.Info(
         title="E-Shop API",
         default_version="v1",
-        description="API documentation for Pepper Shop 🌶️",
+        description="API documentation for  NIGAT-SHOP",
     ),
     public=True,
     permission_classes=[permissions.AllowAny],
@@ -28,5 +28,4 @@ urlpatterns = [
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -62,6 +62,14 @@ class AddressSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        avatar = data.get("avatar")
+        request = self.context.get("request")
+        if avatar and request and not avatar.startswith(("http://", "https://")):
+            data["avatar"] = request.build_absolute_uri(avatar)
+        return data
+
     class Meta:
         model = Profile
         fields = ["phone_number", "bio", "avatar"]
@@ -115,6 +123,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_role(self, obj):
         return get_user_role(obj)
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        avatar = data.get("avatar")
+        request = self.context.get("request")
+        if avatar and request and not avatar.startswith(("http://", "https://")):
+            data["avatar"] = request.build_absolute_uri(avatar)
+
+        profile_data = data.get("profile")
+        if isinstance(profile_data, dict):
+            profile_avatar = profile_data.get("avatar")
+            if profile_avatar and request and not profile_avatar.startswith(("http://", "https://")):
+                profile_data["avatar"] = request.build_absolute_uri(profile_avatar)
+
+        return data
+
     def update(self, instance, validated_data):
         profile_data = validated_data.pop("profile", {})
 
@@ -159,5 +182,5 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        data["user"] = UserProfileSerializer(self.user).data
+        data["user"] = UserProfileSerializer(self.user, context={"request": self.context.get("request")}).data
         return data

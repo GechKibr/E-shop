@@ -4,11 +4,8 @@ from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv() 
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 SECRET_KEY=os.getenv('SECRET_KEY')
-# SECRET_KEY ="django-insecure-o&em-!j=prsz_(3%nqnmkt1u#ga*vl$w#wdzj4$q=j%&&m#xb3"
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
-
 ALLOWED_HOSTS = ['*']
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -123,7 +120,6 @@ MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
 # Chapa Payment Configuration
-# Set these in environment variables for production
 CHAPA_SECRET_KEY = os.getenv("CHAPA_SECRET_KEY", "")
 CHAPA_CALLBACK_URL = os.getenv("CHAPA_CALLBACK_URL", "http://localhost:5173/payment/callback")
 
