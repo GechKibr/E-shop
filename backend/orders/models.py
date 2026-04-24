@@ -3,6 +3,14 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.utils.text import slugify
 
+
+class PaymentStatus(models.TextChoices):
+    UNPAID = "UNPAID", "Unpaid"
+    PENDING = "PENDING", "Payment Pending"
+    COMPLETED = "COMPLETED", "Payment Completed"
+    FAILED = "FAILED", "Payment Failed"
+
+
 class OrderStatus(models.Model):
     name = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=50, unique=True, blank=True)
@@ -38,6 +46,12 @@ class Order(models.Model):
         decimal_places=2, 
         default=0.00,
         validators=[MinValueValidator(0)]
+    )
+    payment_status = models.CharField(
+        max_length=20,
+        choices=PaymentStatus.choices,
+        default=PaymentStatus.UNPAID,
+        db_index=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

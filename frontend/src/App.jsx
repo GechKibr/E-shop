@@ -11,6 +11,7 @@ import WishlistPage from "./pages/WishlistPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import OrdersPage from "./pages/OrdersPage";
 import ProfilePage from "./pages/ProfilePage";
+import PaymentCallbackPage from "./pages/PaymentCallbackPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AdminRoute from "./admin/components/AdminRoute";
 import AdminLayout from "./admin/layouts/AdminLayout";
@@ -50,6 +51,14 @@ function App() {
           element={
             <ProtectedRoute>
               <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment/callback"
+          element={
+            <ProtectedRoute>
+              <PaymentCallbackPage />
             </ProtectedRoute>
           }
         />

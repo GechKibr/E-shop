@@ -56,6 +56,7 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "status_slug",
             "total_price",
+            "payment_status",
             "items",
             "status_history",
             "created_at",

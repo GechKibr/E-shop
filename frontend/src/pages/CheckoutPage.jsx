@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import orderApi from "../api/orderApi";
+import paymentApi from "../api/paymentApi";
 import { getApiErrorMessage } from "../api/error";
 import { useCart } from "../context/CartContext";
 import EmptyState from "../components/EmptyState";
@@ -10,6 +11,7 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const { cart, cartTotal, refreshCart } = useCart();
   const [loading, setLoading] = useState(false);
+  const [orderId, setOrderId] = useState(null);
 
   if (!cart?.items?.length) {
     return (
@@ -26,19 +28,34 @@ function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setLoading(true);
     try {
+      // Step 1: Create the order
       const payload = {
         items: cart.items.map((item) => ({
           product_id: item.product,
           quantity: item.quantity,
         })),
       };
-      await orderApi.createOrder(payload);
-      await refreshCart();
-      toast.success("Order placed successfully");
-      navigate("/orders");
+      
+      const orderResponse = await orderApi.createOrder(payload);
+      const newOrderId = orderResponse.order_id;
+      setOrderId(newOrderId);
+      
+      // Step 2: Initiate payment
+      const returnUrl = `${window.location.origin}/payment/callback`;
+      const paymentResponse = await paymentApi.initiatePayment(newOrderId, returnUrl);
+      
+      if (paymentResponse.checkout_url) {
+        // Step 3: Redirect to Chapa checkout page
+        toast.success("Redirecting to payment gateway...");
+        setTimeout(() => {
+          window.location.href = paymentResponse.checkout_url;
+        }, 500);
+      } else {
+        toast.error("Failed to get checkout URL from payment gateway");
+        setLoading(false);
+      }
     } catch (error) {
-      toast.error(getApiErrorMessage(error, "Failed to place order"));
-    } finally {
+      toast.error(getApiErrorMessage(error, "Failed to process order and payment"));
       setLoading(false);
     }
   };
@@ -76,7 +93,7 @@ function CheckoutPage() {
           disabled={loading}
           className="mt-4 w-full rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-500 disabled:opacity-60"
         >
-          {loading ? "Placing order..." : "Place order"}
+          {loading ? "Processing..." : "Pay Now"}
         </button>
 
         <Link

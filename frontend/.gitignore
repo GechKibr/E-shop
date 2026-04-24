@@ -30,3 +30,4 @@ dist-ssr
 *.pfx
 *.p12
 *.log
+.devcontainer
