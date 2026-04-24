@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import orderApi from "../api/orderApi";
 import paymentApi from "../api/paymentApi";
@@ -8,10 +8,8 @@ import { useCart } from "../context/CartContext";
 import EmptyState from "../components/EmptyState";
 
 function CheckoutPage() {
-  const navigate = useNavigate();
-  const { cart, cartTotal, refreshCart } = useCart();
+  const { cart, cartTotal } = useCart();
   const [loading, setLoading] = useState(false);
-  const [orderId, setOrderId] = useState(null);
 
   if (!cart?.items?.length) {
     return (
@@ -38,7 +36,7 @@ function CheckoutPage() {
       
       const orderResponse = await orderApi.createOrder(payload);
       const newOrderId = orderResponse.order_id;
-      setOrderId(newOrderId);
+      sessionStorage.setItem("last_order_id", String(newOrderId));
       
       // Step 2: Initiate payment
       const returnUrl = `${window.location.origin}/payment/callback`;

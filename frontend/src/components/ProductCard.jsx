@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
+import { toAbsoluteMediaUrl } from "../utils/mediaUrl";
 
 function ProductCard({ product, onAddToCart, adding, onWishlistToggle, isWishlisted, wishlistLoading }) {
-  const imageSrc = product.product_image_file_url || product.product_image || "";
+  const imageSrc = toAbsoluteMediaUrl(product.product_image_file_url || product.product_image || "");
   const price = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",

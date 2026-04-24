@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import authApi from "../api/authApi";
+import { toAbsoluteMediaUrl } from "../utils/mediaUrl";
 
 const emptyAddressForm = {
   country: "",
@@ -35,7 +36,7 @@ function ProfilePage() {
     if (avatarFile) {
       return URL.createObjectURL(avatarFile);
     }
-    return user?.avatar || user?.profile?.avatar || "";
+    return toAbsoluteMediaUrl(user?.avatar || user?.profile?.avatar || "");
   }, [avatarFile, user]);
 
   useEffect(() => {

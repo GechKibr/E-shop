@@ -6,6 +6,7 @@ import wishlistApi from "../api/wishlistApi";
 import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../api/error";
+import { toAbsoluteMediaUrl } from "../utils/mediaUrl";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorState from "../components/ErrorState";
 
@@ -215,7 +216,7 @@ function ProductDetailPage() {
     style: "currency",
     currency: "USD",
   }).format(Number(product.price || 0));
-  const imageSrc = product.product_image_file_url || product.product_image || "";
+  const imageSrc = toAbsoluteMediaUrl(product.product_image_file_url || product.product_image || "");
   const averageRating = Number(product.average_rating || 0);
   const reviewsCount = Number(product.reviews_count || 0);
 

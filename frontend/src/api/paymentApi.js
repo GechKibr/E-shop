@@ -3,7 +3,6 @@
  * Handles all payment-related API calls
  */
 import axiosClient from "./axiosClient";
-import { getApiErrorMessage } from "./error";
 
 const paymentApi = {
   /**
@@ -13,14 +12,10 @@ const paymentApi = {
    * @returns {Promise} - Response with checkout_url
    */
   initiatePayment: async (orderId, returnUrl = "") => {
-    try {
-      const response = await axiosClient.post(`/payments/initiate/${orderId}/`, {
-        return_url: returnUrl,
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.post(`/payments/initiate/${orderId}/`, {
+      return_url: returnUrl,
+    });
+    return response.data;
   },
 
   /**
@@ -29,12 +24,8 @@ const paymentApi = {
    * @returns {Promise} - Payment status response
    */
   getPaymentStatus: async (orderId) => {
-    try {
-      const response = await axiosClient.get(`/payments/order/${orderId}/status/`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await axiosClient.get(`/payments/order/${orderId}/status/`);
+    return response.data;
   },
 
   /**

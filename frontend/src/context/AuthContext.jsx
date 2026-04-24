@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import authApi from "../api/authApi";
 import { tokenStorage } from "../api/token";
 import { getApiErrorMessage } from "../api/error";
+import { toAbsoluteMediaUrl } from "../utils/mediaUrl";
 
 const AuthContext = createContext(null);
 
@@ -19,7 +20,7 @@ const normalizeUser = (rawUser) => {
     profile: rawUser.profile || {},
     phone_number: rawUser.phone_number || rawUser.profile?.phone_number || "",
     bio: rawUser.bio || rawUser.profile?.bio || "",
-    avatar: rawUser.avatar || rawUser.profile?.avatar || "",
+    avatar: toAbsoluteMediaUrl(rawUser.avatar || rawUser.profile?.avatar || ""),
   };
 };
 
