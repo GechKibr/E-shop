@@ -1,5 +1,6 @@
 import requests
 import logging
+import re
 import uuid
 from decimal import Decimal
 from typing import Dict, Optional, Tuple
@@ -14,6 +15,8 @@ class ChapaException(Exception):
 class ChapaService:
     
     BASE_URL = "https://api.chapa.co/v1"
+
+    _CUSTOMIZATION_ALLOWED_RE = re.compile(r"[^A-Za-z0-9._\- ]+")
     
     def __init__(self):
         self.secret_key = getattr(settings, "CHAPA_SECRET_KEY", None)
@@ -79,6 +82,10 @@ class ChapaService:
         except Exception as e:
             logger.error(f"Unexpected error during Chapa API request: {str(e)}")
             return False, {"error": str(e)}
+
+    def _sanitize_customization(self, value: str) -> str:
+        cleaned = self._CUSTOMIZATION_ALLOWED_RE.sub("", value or "").strip()
+        return " ".join(cleaned.split())
     
     def initialize_payment(
         self,
@@ -112,8 +119,8 @@ class ChapaService:
             "callback_url": self.callback_url,
             "return_url": return_url or self.callback_url,
             "customization": {
-                "title": f"E-Shop Order #{order_id}",
-                "description": f"Payment for order #{order_id}",
+                "title": self._sanitize_customization(f"E-Shop Order {order_id}"),
+                "description": self._sanitize_customization(f"Payment for order {order_id}"),
             }
         }
         

@@ -1,3 +1,4 @@
+import sys
 from django.conf import settings
 from django.urls import path, re_path, include
 from django.conf.urls.static import static
@@ -28,4 +29,5 @@ urlpatterns = [
     path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
 
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG or getattr(settings, "SERVE_MEDIA", False) or "runserver" in sys.argv:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
